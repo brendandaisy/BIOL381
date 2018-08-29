@@ -1,4 +1,4 @@
 # BIOL381
 Computational Biology
 
-Test
+This repository contains homework for UVM's 'Computational Biology' course
