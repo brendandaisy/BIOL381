@@ -1,9 +1,23 @@
 ---
-title: "Test"
-author: "Brendan Case"
-output: html_document
+title: "BIO 381 Homework Solutions"
+output:
+  rmdformats::html_clean:
+    highlight: kate
 ---
+### Computational Biology
+### Fall 2018    
 
-# Homework
+<p align="center">
+### Brendan Case 
+Email: Brendan.Case@uvm.edu   
+</p>
 
+<p style="text-align:left;"><img src="../../../Pictures/cray.jpg" width="200" height="200"></p>  
+
+## Table of contents    
+* [08/29/2018 Homework 1: Setting up a webpage](#sec1)
+
+## Homework
+
+<div id='sec1'/>
 [Homework 1](hw1.html)

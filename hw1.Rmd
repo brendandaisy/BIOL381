@@ -1,7 +1,19 @@
 ---
-title: "Homework 1"
+title: "BIOL381: Homework 1"
 author: "Brendan Case"
 output: html_document
 ---
 
-test test
+<body>
+## A fun fact about myself
+
+<div class="red">
+I am obsessed with spicy food and aspire to win a chili eating contest someday 🌶 🌶 🌶
+</div>
+
+<style>
+body {
+  background-color: red;
+}
+</style>
+</body>
