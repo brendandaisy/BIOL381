@@ -16,8 +16,12 @@ Email: Brendan.Case@uvm.edu
 
 ## Table of contents    
 * [08/29/2018 Homework 1: Setting up a webpage](#sec1)
+* [09/05/2018 Homework 2: Typora diagrams](#sec1)
 
 ## Homework
 
 <div id='sec1'/>
 [Homework 1](hw1.html)
+
+<div id='sec2'/>
+[Homework 2](hw2.html)

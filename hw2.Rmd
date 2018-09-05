@@ -10,7 +10,7 @@ Below you can find two example diagrams based on my research on self-adaptive ev
 
 Here is a path diagram depicting a cartoon of the logic/workflow used when proving an algorithm's effectiveness.
 
-
+![](sa_flowchart.png)
 
 ## Pre-graph
 
@@ -25,6 +25,6 @@ poly = function(x, a) {
 
 plot(x, y, type="n", ylab="expected runtime", xlab="problem length")
 curve(poly(x, 1.5), col="red", type="l", add=T)
-curve(poly(x, 1), col="green", type="l", add=T)
+curve(100 + 5 * poly(x, 1), col="green", type="l", add=T)
 ```
 
