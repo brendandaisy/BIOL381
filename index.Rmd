@@ -16,7 +16,8 @@ Email: Brendan.Case@uvm.edu
 
 ## Table of contents    
 * [08/29/2018 Homework 1: Setting up a webpage](#sec1)
-* [09/05/2018 Homework 2: Typora diagrams](#sec1)
+* [09/05/2018 Homework 2: Typora diagrams](#sec2)
+* [09/12/2018 Homework 3: Creating a Beamer Presentation](#sec3)
 
 ## Homework
 
@@ -25,3 +26,6 @@ Email: Brendan.Case@uvm.edu
 
 <div id='sec2'/>
 [Homework 2](hw2.html)
+
+<div id='sec3'/>
+[Homework 3 (Click to Download)](hw3.pdf)

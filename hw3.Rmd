@@ -1,0 +1,47 @@
+---
+title: "Homework #3"
+author: "Brendan Case"
+date: "9/12/2018"
+output: 
+  beamer_presentation: 
+    colortheme: beaver
+    theme: Warsaw
+---
+
+
+## Slide with Bullet (Ants)
+
+- \color{blue} Sweat Bee
+- \color{yellow} Bald-faced Hornet
+- \color{orange} Red Paper Wasp
+- \color{red} Bullet Ant
+
+## Incremental Bullets + Bigskip
+> - There is one sting which is even spicier....
+> - \*\*drumroll\*\*
+\bigskip
+\bigskip
+\bigskip
+\bigskip
+> - \textit{Synoeca septentrionalis}!!
+\only<3>{
+\begin{picture}(320,250)
+ \put(200,170){\includegraphics[height=4cm]{warriorwasp.jpg}}
+ \put(60,120){\includegraphics[height=4cm]{warriorwasp.jpg}}
+ \end{picture}}
+ 
+## Figure In \LaTeX\ Using Centering
+
+ \begin{center}
+ \includegraphics[height=6cm]{celtic.jpg}
+ \end{center}
+ Often, putting an image in a center environment is easiest.
+ 
+## Figure In \LaTeX\ Using Minipages
+
+ \begin{picture}(320,250)
+ \put(5,50){\includegraphics[height=5.5cm]{blackboard.png}}
+ \put(95,180){\begin{minipage}[t]{0.4\linewidth}
+ {\color{white} Choose a point on the unit circle. Connect it to the origin with a line of length one, and denote the angle between that line and the horizontal coordinate axis by $\theta$.}
+ \end{minipage}}
+ \end{picture}
