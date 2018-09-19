@@ -24,15 +24,61 @@ rep(5:1, times=1:5)
 ### 3
 
 ```{r}
-
+x = runif(2)
+polar_coords = c(((x[1])^2 + (x[2])^2)^(1/2), atan(x[2] / x[1]))
+print(paste("radius = ",polar_coords[1], ", theta = ", polar_coords[2], sep=""))
 ```
 
 ### 4
 
 ```{r}
+q <- c("sheep", "fox", "owl", "ant")
+q = c(q, "serpent")
+q = q[2:length(q)]
+q = c("donkey", q)
+q = q[1:length(q) - 1]
+q = c(q[1:2], q[length(q)])
+q = c(q[1:2], "aphid", q[length(q)])
+# print the position of the aphid:
+print(which("aphid" == q))
 ```
 
 ### 5
 
 ```{r}
+ints = 1:100
+filtered_ints = ints[ints %% 2 != 0 & ints %% 3 != 0 & ints %% 7 != 0]
+print(filtered_ints)
 ```
+
+### 6
+
+`\s+` replaced with `,`
+
+greedily matches all sequences of 1 or more whitelines. In my editor, there were no newlines in the table.
+
+### 7
+
+`(\w+),\s+(\w+),\s+((\w+\s)+\w+$)` replaced with `$1 $2 ($3)`
+
+match characters till you see a comma and whitespace twice, then capture at least one word, but possibly any number more. The last capture group can then just be put in parentheses.
+
+### 8
+
+`(\d{4})\s+((\w+\s)*\w+\.mp3)` replaced with `$2_$1\n`
+
+the above with accomplish both tasks with a single command. first grab the id, then grab the title, which will always have 0 or more words followed by a space, then a word followed by `.mp3`. Then each match is followed by a newline, so they will all appear on their own line.
+
+### 9
+
+For the first part:
+
+`([A-Z])\w*,(\w+),[^,]+(,\d+)` replaced with `$1_$2$3`
+
+grab the leading capitol letter, then consume the rest of the letters up to the comma, then grab the next letters up to the comma. Consume everything up to the next comma, then grab the last sequence of a comma followed by one or more digits.
+
+For the second part:
+
+`([A-Z])\w*,(\w{1,4})\w*,[^,]+(,\d+)` replaced with `$1_$2$3`
+
+same as before, but this time grab only 4 letters of the species and consume the rest. This will also successfully grab the entire species name, if that name is less than 4 letters.
