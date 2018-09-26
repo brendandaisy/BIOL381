@@ -1,0 +1,80 @@
+---
+title: 'Homework #5'
+author: "Brendan Case"
+date: "9/26/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+data("iris")
+```
+
+## 1
+```{r}
+glimpse(iris)
+head(iris)
+dim(iris)
+```
+150 observations of 5 variables.
+
+## 2
+```{r}
+iris1 = filter(iris, Species != "setosa", Sepal.Length > 6.0,
+               Sepal.Width > 2.5)
+dim(iris1)
+```
+56 observations of 5 variables.
+
+## 3
+```{r}
+iris2 = select(iris1, c(Species, Sepal.Length, Sepal.Width))
+dim(iris2)
+```
+56 observations of 3 variables.
+
+## 4
+```{r}
+iris3 = arrange(iris2, Sepal.Length)
+head(iris3)
+```
+
+## 5
+```{r}
+iris4 = mutate(iris3, area = Sepal.Length * Sepal.Width)
+dim(iris4)
+```
+56 observations and 4 variables.
+
+## 6
+```{r}
+iris5 = summarize(iris4, meanSepalLen = mean(Sepal.Length),
+                  meanSepalWidth = mean(Sepal.Width),
+                  numSamples = nrow(iris4))
+print(iris5)
+```
+
+## 7
+```{r}
+iris6 = summarize(group_by(iris4, Species),
+                  meanSepalLen = mean(Sepal.Length),
+                  meanSepalWidth = mean(Sepal.Width),
+                  numSamples = n())
+print(iris6)
+```
+
+## 8
+```{r}
+iris6 = iris %>%
+  filter(Species != "setosa", Sepal.Length > 6.0,
+         Sepal.Width > 2.5) %>%
+  select(c(Species, Sepal.Length, Sepal.Width)) %>%
+  arrange(Sepal.Length) %>%
+  mutate(area = Sepal.Length * Sepal.Width) %>%
+  group_by(Species) %>%
+  summarize(meanSepalLen = mean(Sepal.Length),
+                  meanSepalWidth = mean(Sepal.Width),
+                  numSamples = n())
+print(iris6)
+```
