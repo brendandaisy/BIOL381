@@ -12,12 +12,14 @@ output:
 Email: Brendan.Case@uvm.edu   
 </p>
 
-<p style="text-align:left;"><img src="../../../Pictures/cray.jpg" width="200" height="200"></p>  
+<p style="text-align:left;"><img src="prof.jpg" width="200" height="200"></p>  
 
 ## Table of contents    
 * [08/29/2018 Homework 1: Setting up a webpage](#sec1)
 * [09/05/2018 Homework 2: Typora diagrams](#sec2)
 * [09/12/2018 Homework 3: Creating a Beamer Presentation](#sec3)
+* [09/19/2018 Homework 4: Atomic Vectors and Regular Expression](#sec4)
+* [09/26/2018 Homework 5: Using the Dplyr Package](#sec5)
 
 ## Homework
 
@@ -29,3 +31,9 @@ Email: Brendan.Case@uvm.edu
 
 <div id='sec3'/>
 [Homework 3 (Click to Download)](hw3.pdf)
+
+<div id='sec4'/>
+[Homework 4](hw4.html)
+
+<div id='sec5'/>
+[Homework 5](hw5.html)
