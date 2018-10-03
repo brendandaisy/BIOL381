@@ -1,9 +1,10 @@
 ---
-title: "BIO 381 Homework Solutions"
+title: "BIOL381 Homework Solutions"
 output:
   rmdformats::html_clean:
     highlight: kate
 ---
+<body>
 ### Computational Biology
 ### Fall 2018    
 
@@ -12,7 +13,7 @@ output:
 Email: Brendan.Case@uvm.edu   
 </p>
 
-<p style="text-align:left;"><img src="prof.jpg" width="200" height="200"></p>  
+<div style="text-align:left; border=1px solid #000"><img src="prof.jpg" width="300" height="300" style="display:block;"></div>
 
 ## Table of contents    
 * [08/29/2018 Homework 1: Setting up a webpage](#sec1)
@@ -41,3 +42,10 @@ Email: Brendan.Case@uvm.edu
 
 <div id='sec6'/>
 [Homework 6](hw6.html)
+
+<style>
+body {
+  background-color: #B0C4DE;
+}
+</style>
+</body>
