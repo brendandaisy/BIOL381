@@ -1,0 +1,157 @@
+---
+title: 'Homework #6'
+author: "Brendan Case"
+date: "10/3/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(MASS)
+data("iris")
+```
+
+## Long and Wide Data Formats
+
+```{r}
+longDat = iris %>%
+  gather(Sepal.Length:Petal.Width, key="Trait", value="cm") %>%
+  group_by(Trait, Species) %>%
+  summarize(avgVal=mean(cm)) %>%
+  arrange(Species)
+longDat
+```
+
+## Fitting a Distribution
+
+The data I used was some free data on the average river height of the Rio Negro, which can be downloaded [here](https://vincentarelbundock.github.io/Rdatasets/csv/boot/manaus.csv). 
+Since some of the values are below 0 (presumably the measurement is relative to sea level?), I just add ten to all recorded values.
+
+### Read in Data Vector
+
+```{r}
+z <- read.table("manaus.csv",header=TRUE,sep=",", stringsAsFactors=FALSE)
+names(z) = c("ID", "Time", "myVar")
+z$myVar = z$myVar + 10
+str(z)
+summary(z)
+```
+
+### Plot histogram of data
+
+```{r message=F}
+p1 <- ggplot(data=z, aes(x=myVar, y=..density..)) +
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+print(p1)
+```
+
+### Add empirical density curve
+
+```{r message=FALSE}
+p1 <-  p1 +  geom_density(linetype="dotted",size=0.75)
+print(p1)
+```
+
+
+### Get maximum likelihood parameters for normal
+
+```{r}
+normPars <- fitdistr(z$myVar,"normal")
+print(normPars)
+str(normPars)
+normPars$estimate["mean"]
+```
+
+### Plot normal probability density
+
+```{r message=FALSE}
+meanML <- normPars$estimate["mean"]
+sdML <- normPars$estimate["sd"]
+
+xval <- seq(0,max(z$myVar),len=length(z$myVar))
+
+ stat <- stat_function(aes(x = xval, y = ..y..), fun = dnorm, colour="red", n = length(z$myVar), args = list(mean = meanML, sd = sdML))
+ p1 + stat
+```
+
+### Plot exponential probability density
+
+```{r message=FALSE}
+expoPars <- fitdistr(z$myVar,"exponential")
+rateML <- expoPars$estimate["rate"]
+
+stat2 <- stat_function(aes(x = xval, y = ..y..), fun = dexp, colour="blue", n = length(z$myVar), args = list(rate=rateML))
+ p1 + stat + stat2
+```
+
+### Plot uniform probability density
+
+```{r message=FALSE}
+stat3 <- stat_function(aes(x = xval, y = ..y..), fun = dunif, colour="darkgreen", n = length(z$myVar), args = list(min=min(z$myVar), max=max(z$myVar)))
+ p1 + stat + stat2 + stat3
+```
+
+### Plot gamma probability density
+
+```{r message=FALSE}
+gammaPars <- fitdistr(z$myVar,"gamma")
+shapeML <- gammaPars$estimate["shape"]
+rateML <- gammaPars$estimate["rate"]
+
+stat4 <- stat_function(aes(x = xval, y = ..y..), fun = dgamma, colour="green", n = length(z$myVar), args = list(shape=shapeML, rate=rateML))
+ p1 + stat + stat2 + stat3 + stat4
+```
+
+### Plot beta probability density
+
+```{r message=FALSE,warning=F}
+pSpecial <- ggplot(data=z, aes(x=myVar/(max(myVar + 0.1)), y=..density..)) +
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) + 
+  xlim(c(0,1)) +
+  geom_density(size=0.75,linetype="dotted")
+
+betaPars <- fitdistr(x=z$myVar/max(z$myVar + 0.1),start=list(shape1=1,shape2=2),"beta")
+shape1ML <- betaPars$estimate["shape1"]
+shape2ML <- betaPars$estimate["shape2"]
+
+statSpecial <- stat_function(aes(x = xval, y = ..y..), fun = dbeta, colour="orchid", n = length(z$myVar), args = list(shape1=shape1ML,shape2=shape2ML))
+pSpecial + statSpecial
+```
+
+## Simulating a Distribution
+
+From the above section, I'd say the normal distribution fits this data set best, so I'll be sampling from a normal distribution for simulating new data.
+
+```{r message=FALSE}
+simData = rnorm(n=length(z$myVar), mean=meanML, sd=sdML)
+simData = data.frame(1:length(z$myVar), simData)
+names(simData) = c("ID", "mySimVar")
+p1 <- ggplot(data=simData, aes(x=mySimVar, y=..density..)) +
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+p1 +  geom_density(linetype="dotted",size=0.75)
+
+p2 <- ggplot(data=z, aes(x=myVar, y=..density..)) +
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+p2 +  geom_density(linetype="dotted",size=0.75)
+```
+
+### How do the two histogram profiles compare?
+
+It seems that the simulated data is a good bit more spread. I'd say that the "bump" of outliers seen on the lower end of the histogram in the real data caused the maximum-likelyhood standard deviation to be larger than if the data did not have this bump. Then, by simulating the data with this distribution, the information about these outliers is lost and instead we end up with data that seems too far spread about the mean.
+
+Using a gamma distribution is also quite sensitive to these lower outliers, though the result looks quite different:
+
+```{r message=FALSE}
+simData = rgamma(n=length(z$myVar), shape=shapeML, rate=rateML)
+simData = data.frame(1:length(z$myVar), simData)
+names(simData) = c("ID", "mySimVarGamma")
+p1 <- ggplot(data=simData, aes(x=mySimVarGamma, y=..density..)) +
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+p1 +  geom_density(linetype="dotted",size=0.75)
+```
+
+
+
+
+
