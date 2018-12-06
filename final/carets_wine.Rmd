@@ -1,0 +1,239 @@
+---
+title: "Caret Demo"
+author: "Brendan Case"
+date: "12/6/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The `caret` package brings together hundreds of algorithms for building regression and classification models under a common syntax. Many of these algorithms exist as independent R packages strewn across R's vast ecosystem. For these algorithms, caret can be thought of as a "wrapper" package which allows one to learn a single, simple syntax and workflow while gaining all the power of these assorted techniques. In addition, caret provides a number of helpful functions for visualizing the model building process and preparing data.
+
+The resources I found most helpful when learning caret were the online documentation (http://topepo.github.io/caret/), and Max Kuhn's paper *Building Predictive Models in R Using the caret Package*.
+
+```{r, message=F, results=F}
+library(caret)
+library(patchwork)
+library(tidyverse)
+set.seed(1235)
+load("wine.Rda")
+colnames(wine) = make.names(colnames(wine))
+```
+
+#### The `wine` dataset
+
+I will be demonstrating how train a predictive model on the wine dataset, a collection of attributes from 178 samples of wine. Each wine came from one of 3 cultivators, each from the same region in Italy. I obtained this data set [here](https://archive.ics.uci.edu/ml/datasets/Wine).
+
+To get a sense of the wine dataset, let's begin by checking its basic strucure.
+
+```{r}
+str(wine)
+head(wine)
+```
+
+We see that the `class` variable, corresponding to which of the 3 cultivators the wine came from, is a factor with 3 levels, while all other variables are continuous. I have no idea what the majority of them mean in terms of wine though.
+
+Since we have so many variables, I think it is more enlightening to view their distributions, rather than summary statistics. Also, the distribution of a variable is important to keep in mind when doing linear regression or other parametric tests. The distributions can be quickly shown using `ggplot2`, first by converting the data into long format.
+
+```{r}
+wine_long = gather(wine, attr, val, -class)
+ggplot(wine_long, aes(val)) + geom_density() +
+  geom_histogram(aes(y=..density..), bins=30, alpha=.7) +
+  facet_wrap(.~attr, scales="free")
+```
+
+The data all looks fairly normally distributed, with some variables having some moderate skew but with few outliers overall.
+
+#### Outline for fitting a model
+
+There are many ways to divide the steps for training a model in caret. However, I find it useful to always break the process of devoloping the model into the following steps:
+
+(1) **Preparation.** Put the data into the proper format for training the model. This usually includes separating the data into *training* and *test* sets. The training set is used to fit the model, then the test set is used to evaluate the predictive power of the model on data which it did not have the oppurtunity to train on. This is important for assessing the model's ability to generalize to the traget population. 
+The preparation step can also include transformations such as normalizing the data or converting continuous variables into numeric ones.
+(2) **Training.** Use the training set to fit a model using one of the many possible learning algorithms. Before training, several choices have to be made.
+    - Learning algorithm: with so many choices, choosing the right algorithm can   feel overwhelming. The most important thing is choosing one designed for regression vs. classification depending on the prediction task. After this, I'd say it doesn't matter too much for biological settings. In addition, using an algorithm with caret requires very little understanding, which allows one to focus on the pros and cons of many different algorithms without knowing the ins and outs of how they work.
+    - Resampling: how the training set is shown to the algorithm. In biology, samples are often precious and it is important to get as much as possible from the training set without overfitting the model. Resampling does this by training the model on variations of the same data many times. An easy to explain resampling algorithm is *Leave-group-out Cross Validation*, in which a group of size $p$ is taken from the training set which is then used to validate the performance of the model after training on the remaining $n - p$ obervations. This is then repeated for each way to the partition the training set in this way. Since this means there will be ${n \choose p}$ resamples, this is not a good technique for large datasets.
+    - Training parameters: most training algorithms require user-defined parameters which dictate the behaviour of the algorithm. Choosing the right parameters can make a huge difference in the quality of the model, so it is usually best to try out many different parameter settings.
+(3) **Prediction.** Evaluate the performance of the model on the test set, or, if you are very confident in your model, create real-world predictions.
+
+Now let's get started with caret and see how these steps can be implemented!
+
+## A minimal working example
+
+To demonstrate the ease of using caret, I will first show how the above steps can be implemented with very little work and familiarity with training concepts. Then in the next section, I will expand upon the capabilities of caret by demonstrating how to build a much better model and performing some common model analysis.
+
+#### Preparation
+
+For the first step, we need to create the training and test sets. I'm going to reserve 20\% of the data to test the model's predictive power, and the remaining 80\% for training. This can be done using caret's `createDataPartition` function, which returns a vector of indices to seperate the data.
+
+```{r}
+part = createDataPartition(wine$class, p = .8, list = F)
+train = wine[part, ]
+test = wine[-part, ]
+```
+
+The first argument of `createDataPartition` should be a categorical variable for which the distribution is to be preserved in both partitioned datasets. Thus the following values should all be roughly equal:
+
+```{r}
+prop.table(table(wine$class))
+prop.table(table(train$class))
+prop.table(table(test$class))
+```
+
+#### Training
+
+Training any model in caret is done with the `train` function. For this first example we will use the *Random Decision Tree* (CART) method, a simple classification technique which essentially asks a sequence of yes-no questions concerning the prediction variables until a single class is decided upon. The yes-no questions are created by randomly choosing a dividing point for the variable. For example, if one of the variables is the blood temperature of an animal, a question might be "is it warm blooded?", and the temperature at which something is warm blooded is randomly chosen until a good split is found.
+
+```{r}
+rpart_model_wine = train(class ~ ., data = train, method = 'rpart')
+rpart_model_wine
+```
+
+After training the model, we can print the results. Generally, printing caret objects provide a lot of information. It tells us the method used, how many predictor variables there were, and a summary of all the training runs. We see that the default resampling method is bootstrap, and that three different model parameter values for `cp` were tried. With an accuracy of about `r max(rpart_model_wine$results$Accuracy) * 100`, the setting of cp=`r rpart_model_wine$results$cp[1]` was chosen for the final model.
+
+#### Prediction
+
+An accuracy of `r max(rpart_model_wine$results$Accuracy) * 100` on the training set leaves plenty to be desired, but for now let's proceed onwards and get some predictions from our model!
+
+```{r}
+rpart_wine_predict = predict(rpart_model_wine, newdata = test)
+head(rpart_wine_predict)
+```
+
+We will cover more compelling ways to view predictions in the next section, but already we can see that the model incorrectly predicted several class 1 wines as class 2 wines.
+
+## Getting our hands dirty
+
+To get a more realistic sense of how to build meaningful models using caret, in the following example we will expand significantly on each aspect of the basic "prepare-train-predict" sequence presented above. In doing so, I'll show some build-in ways caret provides to visualize and analyze each step of the process for building the model.
+
+The training technique we will use in this section is a *Feed-forward Neural Network*, mainly because it's the technique I'm most familiar with. Although these days there are other algorithms that can do a bit better for simple classification tasks than the FFNN, neural networks are extremely versitile and have many variations with broad application in deep learning.
+
+#### Preprocessing data
+
+One common part of the preparation step is *Pre-processing*, where the data is transformed to help training. With neural networks and other approaches, it is common to use *Z-normalization*, which transforms values to their *Z-value* 
+$$Z_x = \frac{x - \bar{x}}{s},$$
+where $\bar{x}$ is the mean of the variable and $s$ the standard deviation. This will allow gradients to flow through the network more consistently since all variables now have the same mean and standard deviation.
+
+Z-normalization can be done with the `preProcess` function, and the applied propocess object an be applied to data with `predict`:
+
+```{r}
+preproc_values = preProcess(train, method = c("center", "scale"))
+train = predict(preproc_values, train)
+test = predict(preproc_values, test)
+head(train)
+```
+
+#### Customizing the model using `trainControl` and `expand.grid`
+
+In the previous example, we just used the default resampling and parameter choices. However, there a many options for customizing the resampling and parameter search processes. A good first step for choosing which parameters to search over is to lookup the parameters used for a given technique.
+
+```{r}
+modelLookup("nnet")
+```
+
+This function tells us that `nnet` takes two parameters, `decay` and `size`. Decay is a factor to decrease unused weights in the network, and size is the number of nodes in the hidden layer. As a rule of thumb, it is best to try to use as few hidden nodes as possible with the neural net, since this will give faster training and prediction. We can make a parameter grid as follows:
+
+```{r}
+param_grid = expand.grid(.decay = c(0.8, 0.2, 0.05), .size = c(1, 3, 5))
+```
+
+This will tell `train` to try every combination of pairs of parameters in the grid, then pick the pair with best performance.
+
+We will use leave-group-out cross-validation for resampling, which was described in the introduction.
+
+```{r}
+resample_type = trainControl(method = "LGOCV")
+```
+
+Now, we are ready to train the neural network! These additional specifications are passed to the `train` function in an intuitive manner. The final argument, `maxit`, is not actually used by train but by `nnet` itself. In general, any parameters for the training method not indicated by `expand.grid` can be passed along through train.
+
+```{r, results=F}
+nnet_model_wine = train(class ~ ., data = train, method = "nnet",
+                 tuneGrid = param_grid,
+                 trControl = resample_type,
+                 maxit = 200)
+```
+
+#### Visualizing the training process
+
+In addition to just printing the model results, models trained with caret also work nicely with ggplot.
+
+```{r}
+nnet_model_wine
+p = ggplot(nnet_model_wine) | ggplot(nnet_model_wine, metric = "Kappa")
+p / ggplot(nnet_model_wine, plotType = "level")
+```
+
+By the looks of things, 3 hidden nodes was enough to get nearly perfect accuracy.
+
+It is also possible to view the performance of the final model on each of the resample groups (the percentage correct of the $p$ held-out obervations for that particular resampling):
+
+```{r}
+resampleHist(nnet_model_wine)
+```
+
+
+#### Characterizing performance
+
+In the previous example, we obtained a list of predicted classes from the test set. In addition to viewing the predictions, the function `confusionMatrix` provides an excellent summary of the predictive performance.
+
+```{r}
+nnet_wine_predict = predict(nnet_model_wine, newdata = test)
+confusionMatrix(nnet_wine_predict, test$class)
+```
+
+From this we can see which test observations were correct/incorrect in grid format, summary statistics such as a confidence interval for the accuracy, as well as the p-value for the probabillity that the accuracy was greater than just random guessing (which would have accuracy proportional to the proportion of each class in the test set).
+
+#### Variable importance
+
+Finally, now that we have a working model, a natural follow up is to ask what variables served as the most important predictors (and why?). Caret provides the function `varImp` to quickly access the variable importance across all classes, using the same syntax for the many possible training algorithms. For neural networks, importance is calculated using the absolute value of the weights of the input nodes.
+
+```{r}
+imp = varImp(nnet_model_wine)
+imp
+```
+
+We can also few view the overall importance by indexing the `imp` object and storing the importance table in a dataframe.
+
+```{r}
+imp_df = data.frame("attr" = rownames(imp[[1]]),
+                    "imp" = imp[[1]][,1])
+ggplot(imp_df, aes(y=imp, x=attr)) + geom_col() + coord_flip()
+```
+
+So what exactly was our model picking up on? With 13 variables, answering this question in a rigorous way can be difficult because of the complex dependences that may exist between variables. The easiest way to get a sense of what the model is looking for is to plot each of the predictor values seperated by class.
+
+```{r}
+ggplot(wine_long, aes(x=class, y=val, col=class)) + geom_boxplot() +
+         facet_wrap(.~attr, scales="free")
+```
+
+This shows a pretty clear seperation for predictors such as proline, color intensity, and flavanoids, so it makes sense that these variables have heavy weights in the neural net. However, this doesn't necessarily always give the whole picture. Consider the following pairs plot of each of the predictors:
+
+```{r, fig.align="center", fig.width=9.5, fig.height=5.5}
+pairs(wine[-1])
+```
+
+Notice that flavanoids have a strong linear relationship with many of the variables, while proline has a relatively weak relationship with the others. This could lead us to wonder if flavanoids are on their own a better predictor than proline because other variable values can be extrapolated from flavanoid values.
+
+```{r, results=F}
+nnet_model_flav = train(class ~ Flavanoids, data = train, method = "nnet",
+                        tuneGrid = param_grid,
+                        trControl = resample_type,
+                        maxit = 200)
+nnet_model_prol = train(class ~ Proline, data = train, method = "nnet",
+                        tuneGrid = param_grid,
+                        trControl = resample_type,
+                        maxit = 200)
+```
+
+```{r}
+nnet_model_flav
+nnet_model_prol
+```
+
+Sure enough, even though proline was more important in the original model, possibly due to the stronger correlation between flavanoids and the other variables, it seems that on their own, flavanoids are a better predictor variable than proline. This sort of questioning could go on and on. With caret, exploring the differences between models and the effects of combining variables is easy, allowing more time for experimentation and developing hypotheses.
