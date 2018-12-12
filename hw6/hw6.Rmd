@@ -43,14 +43,14 @@ summary(z)
 ```{r message=F}
 p1 <- ggplot(data=z, aes(x=myVar, y=..density..)) +
   geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
-print(p1)
+p1
 ```
 
 ### Add empirical density curve
 
 ```{r message=FALSE}
 p1 <-  p1 +  geom_density(linetype="dotted",size=0.75)
-print(p1)
+p1
 ```
 
 
@@ -58,7 +58,7 @@ print(p1)
 
 ```{r}
 normPars <- fitdistr(z$myVar,"normal")
-print(normPars)
+normPars
 str(normPars)
 normPars$estimate["mean"]
 ```
@@ -128,17 +128,19 @@ simData = rnorm(n=length(z$myVar), mean=meanML, sd=sdML)
 simData = data.frame(1:length(z$myVar), simData)
 names(simData) = c("ID", "mySimVar")
 p1 <- ggplot(data=simData, aes(x=mySimVar, y=..density..)) +
-  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) +
+  xlab("Simulated Data (Normal)")
 p1 +  geom_density(linetype="dotted",size=0.75)
 
 p2 <- ggplot(data=z, aes(x=myVar, y=..density..)) +
   geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
-p2 +  geom_density(linetype="dotted",size=0.75)
+p2 +  geom_density(linetype="dotted",size=0.75) +
+  xlab("Actual Data")
 ```
 
 ### How do the two histogram profiles compare?
 
-It seems that the simulated data is a good bit more spread. I'd say that the "bump" of outliers seen on the lower end of the histogram in the real data caused the maximum-likelyhood standard deviation to be larger than if the data did not have this bump. Then, by simulating the data with this distribution, the information about these outliers is lost and instead we end up with data that seems too far spread about the mean.
+It seems that the simulated data has a good bit more spread. I'd say that the "bump" of outliers seen on the lower end of the histogram in the real data caused the maximum-likelyhood standard deviation to be larger than if the data did not have this bump. Then, by simulating the data with this distribution, the information about these outliers is lost and instead we end up with data that seems too far spread about the mean.
 
 Using a gamma distribution is also quite sensitive to these lower outliers, though the result looks quite different:
 
@@ -147,7 +149,8 @@ simData = rgamma(n=length(z$myVar), shape=shapeML, rate=rateML)
 simData = data.frame(1:length(z$myVar), simData)
 names(simData) = c("ID", "mySimVarGamma")
 p1 <- ggplot(data=simData, aes(x=mySimVarGamma, y=..density..)) +
-  geom_histogram(color="grey60",fill="cornsilk",size=0.2) 
+  geom_histogram(color="grey60",fill="cornsilk",size=0.2) +
+  xlab("Simulated Data (Gamma)")
 p1 +  geom_density(linetype="dotted",size=0.75)
 ```
 

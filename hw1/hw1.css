@@ -1,0 +1,61 @@
+body {
+  color: white;
+  background-color: #ef4343;
+  background-image: url(https://gph.to/2Bdg9vN);
+  background-size: 100px 100px;
+  background-repeat: repeat space;
+}
+
+#titlebar {
+  background-color: black;
+  width: auto;
+}
+
+div.centered {
+  
+}
+
+div.top {
+  height: 90px;
+  background-color: rgb(192,192,192);
+  border: outset 3px blue;
+  position: absolute;
+  top: 26px;
+  left: 5px;
+  right: 5px;
+  align-items: center;
+}
+img.top {
+  top: 5%;
+  transform: translate(0, 4%);
+  width: 80px;
+  height: 80px;
+  border: 1px solid;
+  padding: 0px;
+  box-shadow: 2px 2px black;
+}
+div.topwin {
+  height: 25px;
+  border-radius: 3px;
+  background-color: blue;
+  border-top-style: ridge;
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: 2px;
+  left: 5px;
+  right: 5px;
+}
+#exit {
+  position: absolute;
+  right: 5px;
+  top: 2px;
+    <!-- display: block; -->
+    <!-- margin-left: auto; -->
+    <!-- margin-right: right; -->
+  width: 20px;
+  height: 20px;
+}
+p.topwin {
+font-family: 'Microsoft MS Sans Serif';
+}

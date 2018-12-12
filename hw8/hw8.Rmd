@@ -1,0 +1,63 @@
+---
+title: 'Homework #8'
+author: "Brendan Case"
+date: "10/17/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+##################################################
+# FUNCTION: myAnoSummary
+# get F values and significance summary based on an ANOVA model 
+# input: response variable (numerical), groups (list of strings)
+# output: list containing the F-value and p-value from the analysis
+#------------------------------------------------- 
+myAnoSummary = function(response, groups) {
+  anova_model = aov(response ~ groups)
+  z = unlist(summary(anova_model))
+  return(list(fval=z[7], probf=z[9]))
+}
+
+##################################################
+# FUNCTION: myBoxPlot
+# create a ggplot with the goxplot geometry
+# input: data (data frame), xVals (numerical), yVals (numerical), cases (strings)
+# output: a ggplot object
+#------------------------------------------------- 
+myBoxPlot = function(data, xVals, yVals, cases) {
+  ggplot(data=data, aes(x=xVals, y=yVals, fill=cases)) + geom_boxplot()
+}
+
+##################################################
+# FUNCTION: rtGeneratorNorm
+# generate data on the variation on the runtime of an EA, assuming runtimes are 
+# normally distributed
+# input: parameters for the data
+# output: data frame of randomly generated runtime differences for each problem
+#------------------------------------------------- 
+rtGeneratorNorm = function(problemSize = 200,
+  n = 100,
+  problems = c("OneMax", "LeadingOnes","Jump"),
+  expectRuntime = c(log(problem_size) * problem_size, problem_size^2, problem_size^3),
+  sdRuntime = c(2500, 4000, 500000)) {
+    ids = 1:(n * length(problems))
+    rt_diff = c(abs(rnorm(n=n, mean=expectRuntime[1], sd=sdRuntime[1]) - expectRuntime[1]),
+           abs(rnorm(n=n, mean=expectRuntime[2], sd=sdRuntime[2]) - expectRuntime[2]),
+           abs(rnorm(n=n, mean=expectRuntime[3], sd=sdRuntime[3]) - expectRuntime[3]))
+    cases = rep(problems, each=n)
+    return(data.frame(ids, cases, rt_diff))
+}
+
+
+# program body
+data1 = rtGeneratorNorm() # use the default values (initial values from HW7)
+print(myAnoSummary(data1$rt_diff, data1$cases))
+myBoxPlot(data1, data1$cases, data1$rt_diff, data1$cases)
+```
+

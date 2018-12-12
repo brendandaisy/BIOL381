@@ -9,7 +9,9 @@ output:
 ---
 
 
-## Slide with Bullet (Ants)
+## Slide with Bullet (Stings)
+
+Here are some insects with some spicy stings:
 
 - \color{blue} Sweat Bee
 - \color{yellow} Bald-faced Hornet

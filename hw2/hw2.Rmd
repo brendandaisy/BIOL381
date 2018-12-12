@@ -1,0 +1,81 @@
+---
+title: 'Homework #2'
+author: "Brendan Case"
+date: "05/09/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(gtools)
+library(ggplot2)
+```
+
+## 1
+
+The data/project I will be using for this class concerns modelling the spread of the Emerald Ash Borer in North America. Unlike other models of this devastating invasive species, our model (and hence the data we collect to support/design the model) focuses on smaller communities with a large mix of private and public land.
+
+#### The Big Questions
+
+We are interested in anticipating the impact of community involvement on the spread of the pathogen. This can be viewed as a collective action problem: what levels and kinds of collective action can have the most effect in controlling the spread? Given a particular configuration of public and private land, how diligent does the community have to be in monitering signs of infection?
+
+Before testing the effects of various mechanisms to increase community engagement, there are several underlying questions that must be carefully answered. The first is how to build a model which accurately approximates the spread of the beetle, and how to verify the model indeed does this. Thankfully, there is a large amount of research and empirical data on the mechanisms of the EAB breeding and dispersal which will help design and tune the model.
+
+A second big question to answer/verify are realistic assumptions about the community's involvement. For example, we are interested in modelling a community which consists mainly of vacation homes. It is not reasonable to presume people will be in the community more than a few weeks a year, which drastically changes how they are able to monitor their property, and also how likely they are to bring in infected firewood.
+
+Since this research is in very preliminary stages, there are obviously many specific hypotheses which may arrive in light of better literature review and general understanding. As an example question we are interested in, we are curious if there is a trade-off point, or *phase transition* for the EAB population growth for varying levels of community presence. An empty forest with no occupied houses will effectively never see EAB growth assuming it is not already infected/close to an infected site. On the otherhand, low levels of occupation will lead to EAB introduction, since the main way it is introduced to a new area is transportation of infected firewood. Then, very high levels of occupation may lead to EAB decline again.
+
+#### Possible results
+
+After the model is built, we can treat various community awareness scenarios as a controlled experiment, or as the treatment variable which alters the behavior of the model. For example, one could hypothesize that an "awareness campaign" could raise community action and help slow the spread of the beetle. The effects of this campaign can then be assesed in a simulation of the model, with certain parameters adjusted to account for the campaign.
+
+## 2
+
+### Visualization 1: DIPSwitch Table
+
+For a more base exploration of possible outcomes, I use a DIPSwitch table to illustrate combinartions of awareness measures, and their effect on EAB growth. I base my hypothesized outcomes on some preliminary simulation results and intuition.
+
+```{r}
+header = c('Firewood Quarantine', 'Increase Recognition Campaign', 'Increase Monitor Region', 'Outcome')
+dat = permutations(n=2, r=3, v=c('yes', 'no'), repeats.allowed = T) # get all combinations of campaigns
+outcomes = c('severe spread in public and private land',
+             'reduced spread in public land',
+             'reduced spread in private land',
+             'reduced spread in public and private land',
+             'negligible/reduced spread in private/public land',
+             'negligible spread in public and private land',
+             'negligible/reduced spread in private/public land', 
+             'negligible spread in private and public land')
+dat = cbind(dat, outcomes)
+colnames(dat) = header
+```
+
+```{r results = 'asis', echo=F}
+knitr::kable(dat, caption = "DIPSwitch of campaign outcomes")
+```
+
+### Visualization 2: Pre-graph
+
+For visualizing a hypothesized "phase transition" in the spread of EAB based on the amount of time people spend in the community, I made a pre-graph of the possible shape of this phase transition as a function of `occupation level` (probability that a house is occupied, averaged over whole year) and `awareness level` (probability of reporting an outbreak given the number of visibly infected trees in the area).
+
+```{r, message=F, warning=F}
+# make some quick data to trace the graph
+x = seq(0,1, .05)
+y = tanh(x) - .1
+y[y <= 0] = 0
+z = c(y - .05, y, y + 0.05)
+dat = matrix(z, ncol = 3)
+df = data.frame(dat)
+colnames(df) = c('m', '.', 'p')
+
+p = ggplot(df)
+p + geom_area(aes(x=x, y=., fill="red"), alpha = 0.3) +
+  geom_ribbon(aes(x=x, ymin=., ymax=1, fill="green"), alpha = 0.3) +
+  geom_point(aes(x=x, y=m), shape = 43, size = 3) +
+  geom_point(aes(x=x, y=p), shape = 45, size = 3) + 
+  xlab('occupation level') + ylab('awareness level') + 
+  theme(axis.ticks = element_blank()) +
+  scale_fill_identity(name="EAB pop. trajectory", guide = 'legend',labels = c('extinction', 'growth')) +
+  ylim(0, 1) + xlim(0, 1)
+```
+

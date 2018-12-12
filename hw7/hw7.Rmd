@@ -1,0 +1,105 @@
+---
+title: 'Homework #7'
+author: "Brendan Case"
+date: "10/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## 1
+
+To support asymptotic results on the runtimes of Evolutionary Algorithms, it is often helpful to run experiments to get a more practical picture of the non-dominating factors in the algorithm's runtime, and to support the theoretical results. We have collected the runtimes of a self-adaptive EA on several test problems.
+
+We will be exploring the amount of deviation in these problems. For example, one hypothesis is that the variance in the runtimes for the `Jump` function is higher than the other problems. To explore this hypothesis, we will generate some simulated runtimes of the EA on several test functions, including `Jump`. Then, we will perform ANOVA analysis on the deviation of runtimes.
+
+## 2
+
+We assume the runtimes for each function are normally distributed. Based on some experiments, we observed for problem size of $n = 200$ it is not unusual to have a variation of about 1,000,000 function evaluations between runtimes of the `Jump` function.
+
+```{r}
+problem_size = 200
+sample_size = 100
+groups = c("OneMax", "LeadingOnes","Jump")
+means = c(log(problem_size) * problem_size, problem_size^2, problem_size^3)
+sds = c(2500, 4000, 500000)
+ids = 1:(sample_size * length(groups))
+```
+
+## 3
+
+Now we get some simulated data and put it in a data frame. 
+
+```{r}
+rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
+           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
+           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
+cases = rep(groups, each=sample_size)
+rtdata = data.frame(ids, cases, rt_diff)
+```
+
+## 4
+
+First print F value and probabilities...
+
+```{r}
+anova_model = aov(rt_diff ~ cases)
+z = unlist(summary(anova_model))
+anova_summary = list(fval=z[7], probf=z[9])
+anova_summary
+```
+
+And now we do a boxplot of the normalized runtimes for each function.
+
+```{r}
+anova_plot = ggplot(data=rtdata, aes(x=cases, y=rt_diff, fill=cases)) +
+  geom_boxplot()
+anova_plot
+```
+
+## 5
+
+The results seem pretty consistent because the variance on the `Jump` function is clearly much much higher based on our assumptions.
+
+## 6
+
+Holding everything else constant, we started no longer obtaining a statistically significant result if we make the following change to the means (note that changing the standard deviation of the runtimes will cause a change in the means of the deviation, which is the mean we are concerned with):
+
+```{r}
+sds = c(1000, 1100, 1300)
+rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
+           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
+           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
+cases = rep(groups, each=sample_size)
+rtdata = data.frame(ids, cases, rt_diff)
+anova_model = aov(rt_diff ~ cases)
+z = unlist(summary(anova_model))
+anova_summary = list(fval=z[7], probf=z[9])
+anova_summary
+```
+
+based on this, we see that the effect size must be much, much smaller than our hypothesized values to start obtaining non-statistically significant results.
+
+## 7
+
+The effect size was originally so high, it seems difficult to choose a sample size which is small enough to get $p \gg .05$. For example, even $n = 20$ gives the following results:
+
+```{r}
+sds = c(2500, 4000, 500000)
+sample_size = 20
+rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
+           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
+           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
+cases = rep(groups, each=sample_size)
+rtdata = data.frame(ids, cases, rt_diff)
+anova_model = aov(rt_diff ~ cases)
+z = unlist(summary(anova_model))
+anova_summary = list(fval=z[7], probf=z[9])
+anova_summary
+```
+
+
+
