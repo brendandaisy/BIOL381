@@ -1,7 +1,7 @@
 ---
-title: 'Homework #9/10'
+title: 'Homework #9'
 author: "Brendan Case"
-date: "10/24/2018"
+date: "10/17/2018"
 output: html_document
 ---
 
@@ -9,6 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 ```
+
+# Looping Structures
+
+Here are the first 3 exercises from Homework 10. I put them here so that all the looping exercises are contained in the same place.
 
 ## 1
 
@@ -56,9 +60,11 @@ q3 = function(nrow=0, ncol=0) {
 }
 ```
 
-<!--
+## Old exercises:
 
-## 3
+These were the excercises from last week, that were then removed. For completeness, I figured I would include them.
+
+### 3
 
 ```{r}
 maxdiff = function(x = c(0)) {
@@ -76,7 +82,7 @@ maxdiff = function(x = c(0)) {
 }
 ```
 
-## 4
+### 4
 
 Modify the above function:
 
@@ -109,7 +115,7 @@ maxdiff = function(x = c(0)) {
 maxdiff(c(-3, 0 ,1, 3))
 ```
 
-## 5
+### 5
 
 ```{r}
 maxdiff2 = function(x = c(0)) {
@@ -129,7 +135,7 @@ maxdiff2 = function(x = c(0)) {
 }
 ```
 
-## 6
+### 6
 
 ```{r}
 matmut = function(A=matrix(), B=matrix()) {
@@ -147,4 +153,3 @@ matmut = function(A=matrix(), B=matrix()) {
   }
   return(ret)
 }
--->

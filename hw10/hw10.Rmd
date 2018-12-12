@@ -1,0 +1,105 @@
+---
+title: 'Homework #10'
+author: "Brendan Case"
+date: "10/24/2018"
+output: html_document
+---
+
+# Randomization Tests
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1
+
+For simplicity, I'm just going to use the fake data which was produced in Homework 7/8 for this project. Namely, I generate several response variables from a normal distribution with different means and variances. Since this data has three response variables, I will not be doing a regression test like we did in class, but instead a randomization version of a difference in means test.
+
+```{r}
+##################################################
+# FUNCTION: eab_sim
+# generate data simulating the number of survining ash trees for different
+# treatment cases
+# input: parameters for the data
+# output: data frame (long format)
+#------------------------------------------------- 
+eab_sim = function(n=1000,
+                   groups = c('control', 'quar', 'aware'),
+                   means = c(400, 650, 600),
+                   std_devs = c(200, 50, 150)) {
+  dat = data.frame(rnorm(n, means[1], std_devs[1]),
+                   rnorm(n, means[2], std_devs[2]),
+                   rnorm(n, means[3], std_devs[3]))
+  colnames(dat) = groups
+  return(dat)
+}
+```
+
+
+```{r}
+####### ###########################################
+# function: readData
+# read in (or generate) data set for analysis
+# input: none
+# output: 3 column data frame of observed data
+#------------------------------------------------- 
+readData <- function() {
+  return(eab_sim())
+}
+
+##################################################
+# function: shuffleData
+# randomize data by randomly swapping 1/3 of the data between groups
+# input: 3-column data frame
+# output: 3-column data frame
+#------------------------------------------------- 
+shuffleData <- function(data) {
+  temp = data
+  s1 = sample(1:(length(data[,1])/3), replace=F)
+  s2 = sample(1:(length(data[,1])/3), replace=F)
+  s3 = sample(1:(length(data[,1])/3), replace=F)
+  data[,1] = c(data[-s1,1], temp[s1,2])
+  data[,2] = c(data[-s2,2], temp[s2,3])
+  data[,3] = c(data[-s3,3], temp[s3,1])
+  return(data)
+}
+
+##################################################
+# function: getPVal
+# calculate p value from simulation
+# input: list of observed metric, and vector of simulated metrics
+# output: lower, upper tail probability values
+#------------------------------------------------- 
+getPVal <- function(z=NULL) {
+                    if(is.null(z)){
+                      z <- list(xObs=runif(1),xSim=runif(1000))}
+pLower <- mean(z[[2]]<=z[[1]])
+pUpper <- mean(z[[2]]>=z[[1]])
+return(c(pL=pLower,pU=pUpper))
+}
+
+##################################################
+# function: plotRanTest
+# create ggplot of histogram of simulated values
+# input: list of observed metric and vector of simulated metrics
+# output: saved ggplot graph
+#------------------------------------------------- 
+plotRanTest <- function(z=NULL) {
+                if(is.null(z)){
+                  z <- list(rnorm(1),rnorm(1000)) }
+dF <- data.frame(ID=seq_along(z[[2]]),simX=z[[2]])
+p1 <- ggplot(data=dF,mapping=aes(x=simX))
+p1 + geom_histogram(mapping=aes(fill=I("goldenrod"),color=I("black"))) +
+geom_vline(aes(xintercept=z[[1]],col="blue")) 
+
+}
+
+set.seed(1234)
+df = readData()
+df_rand = shuffleData(df)
+# what is the probability that the observed data came from the shuffled data?
+```
+
+## 2
+
+Normally, one would do two-sample t-tests for this type of thing, but I already wrote a function to do that in Homework 8.

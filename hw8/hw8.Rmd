@@ -10,54 +10,86 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+# Organizing Code With Structured Programming
+
+## 1
+
+The code block in this section is basically an R script that does the exact same thing as in Homework 7, but with functions and structured programming practices. In the next section, these functions will be used to extend the analysis from Homework 7.
 
 ```{r}
 ##################################################
-# FUNCTION: myAnoSummary
+# FUNCTION: anova_test
 # get F values and significance summary based on an ANOVA model 
 # input: response variable (numerical), groups (list of strings)
-# output: list containing the F-value and p-value from the analysis
+# output: object containing the F-value and p-value from the analysis
 #------------------------------------------------- 
-myAnoSummary = function(response, groups) {
+anova_test = function(groups, response) {
   anova_model = aov(response ~ groups)
   z = unlist(summary(anova_model))
   return(list(fval=z[7], probf=z[9]))
 }
 
 ##################################################
-# FUNCTION: myBoxPlot
+# FUNCTION: ggbox
 # create a ggplot with the goxplot geometry
 # input: data (data frame), xVals (numerical), yVals (numerical), cases (strings)
 # output: a ggplot object
 #------------------------------------------------- 
-myBoxPlot = function(data, xVals, yVals, cases) {
-  ggplot(data=data, aes(x=xVals, y=yVals, fill=cases)) + geom_boxplot()
+ggbox = function(data, groups, response) {
+  ggplot(data=data, aes(x=groups, y=response, fill=groups)) + geom_boxplot()
 }
 
 ##################################################
-# FUNCTION: rtGeneratorNorm
-# generate data on the variation on the runtime of an EA, assuming runtimes are 
-# normally distributed
+# FUNCTION: eab_sim
+# generate data simulating the number of survining ash trees for different
+# treatment cases
 # input: parameters for the data
-# output: data frame of randomly generated runtime differences for each problem
+# output: data frame (long format)
 #------------------------------------------------- 
-rtGeneratorNorm = function(problemSize = 200,
-  n = 100,
-  problems = c("OneMax", "LeadingOnes","Jump"),
-  expectRuntime = c(log(problem_size) * problem_size, problem_size^2, problem_size^3),
-  sdRuntime = c(2500, 4000, 500000)) {
-    ids = 1:(n * length(problems))
-    rt_diff = c(abs(rnorm(n=n, mean=expectRuntime[1], sd=sdRuntime[1]) - expectRuntime[1]),
-           abs(rnorm(n=n, mean=expectRuntime[2], sd=sdRuntime[2]) - expectRuntime[2]),
-           abs(rnorm(n=n, mean=expectRuntime[3], sd=sdRuntime[3]) - expectRuntime[3]))
-    cases = rep(problems, each=n)
-    return(data.frame(ids, cases, rt_diff))
+eab_sim = function(n=1000,
+                   groups = c('control', 'quar', 'aware'),
+                   means = c(400, 650, 600),
+                   std_devs = c(200, 50, 150)) {
+  dat = data.frame(rnorm(n, means[1], std_devs[1]),
+                   rnorm(n, means[2], std_devs[2]),
+                   rnorm(n, means[3], std_devs[3]))
+  colnames(dat) = groups
+  return(dat)
 }
 
 
-# program body
-data1 = rtGeneratorNorm() # use the default values (initial values from HW7)
-print(myAnoSummary(data1$rt_diff, data1$cases))
-myBoxPlot(data1, data1$cases, data1$rt_diff, data1$cases)
+## program body
+data1 = eab_sim() # use the default values (initial values from HW7)
+data1_long = gather(data1, group, ash_count)
+anova_test(data1_long$group, data1_long$ash_count)
+ggbox(data1_long, data1_long$group, data1_long$ash_count)
+```
+
+## 2
+
+As mentioned in Homework 7, an ANOVA test is only an initial test for investigating whether our (simulated) hypothesis is worth refining. Since we have strong evidence that there is a difference in the mean number of surviving ash in the treatment groups, it makes sense to continue in the conventional manner with two-sample t-test. To do this, I write a new function to perform a t-test on each group pairing, and print the results of the test.
+
+```{r}
+##################################################
+# FUNCTION: paired_ttest
+# run a sequence of two-sided, two-mean t-tests on a set of variables,
+# and print the results of each test
+# input: data (data frame, wide)
+# output: none
+#------------------------------------------------- 
+paired_ttest = function(data) {
+  pairs = combn(colnames(data), 2)
+  for (i in 1:ncol(pairs)) {
+    a = pairs[1,i]
+    b = pairs[2,i]
+    # print(data$a)
+    # print(data$b)
+    print(paste('t-test results between', a, 'and', b))
+    print(t.test(data[a], data[b]))
+  }
+  print(paste("adjusted confidence level is alpha/", ncol(pairs)))
+}
+
+paired_ttest(data1)
 ```
 
