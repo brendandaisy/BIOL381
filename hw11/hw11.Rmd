@@ -1,0 +1,39 @@
+---
+title: 'Homework #11'
+author: "Brendan Case"
+date: "10/31/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Advanced ggplotting
+
+```{r, results=F}
+library(ggplot2)
+library(ggmosaic)
+library(GGally)
+library(ggthemes)
+```
+
+
+Two useful extentions of `ggplot2` that I found this semester were the `ggmosaic` and `GGally` packages. I'll include an example of using each here, using the `iris` dataset. As for themes, I personally really like the `theme_few` theme, especially for including in mathematical texts. The clear background and slight inlay looks really good, and I like the generally softer colors.
+
+```{r, message=F}
+# make another (silly) categorical variable:
+dat = cbind(iris, comp=iris$Sepal.Length < iris$Petal.Length + iris$Petal.Width)
+head(dat)
+p = ggplot(dat) + theme_few() + scale_color_few()
+p + geom_mosaic(aes(x = product(Species), fill=Species))
+p + geom_mosaic(aes(x = product(Species, comp), fill=Species))
+```
+
+`GGally` is especially useful for viewing relationships between variables and for visualizing model fitting. I find the `ggpairs` function to make much more pretty results than base R's `pairs` function, though it is easy to have information overload.
+
+```{r, fig.width=9, fig.height=7, message=F}
+ggpairs(iris, mapping=aes(color=Species)) + theme_few()
+```
+
+

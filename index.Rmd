@@ -55,7 +55,7 @@ Email: Brendan.Case@uvm.edu
 [Homework 8](hw8/hw8.html)
 
 <div id='sec9'/>
-[Homework 9](hw8/hw9.html)
+[Homework 9](hw9/hw9.html)
 
 <div id='sec10'/>
 [Homework 10](hw10/hw10.html)
