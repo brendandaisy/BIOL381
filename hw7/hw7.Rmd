@@ -12,94 +12,220 @@ library(tidyverse)
 
 ## 1
 
-To support asymptotic results on the runtimes of Evolutionary Algorithms, it is often helpful to run experiments to get a more practical picture of the non-dominating factors in the algorithm's runtime, and to support the theoretical results. We have collected the runtimes of a self-adaptive EA on several test problems.
+Looking back at Homework 2, the DIPSwitch table I made will be helpful for assigning treatment groups and deciding on a pattern in the spread of the Emeraldn Ash Borer between treatment groups. The response variable will be number of uninfected or treated ash trees (on both public and private land) at the end of the study period. The table in Homework 2 had a lot of possible treatments, so for simplicity I will choose only three here. 
+The first is the `control` group, which corresponds to no preventative measures in controlling spread. 
+The second I'll call the `quarantine` group, where the only preventative measure is a firewood quarantine. This will restrict EAB growth only to localized spread. 
+The third I'll call the `awareness` group, where the preventative measure is increased inclination to treat EAB on private land. This will restrict local spread on private land, but will allow the small chance of EAB being suddenly introduced to a new vulnerable area, which will rapidly increase growth.
 
-We will be exploring the amount of deviation in these problems. For example, one hypothesis is that the variance in the runtimes for the `Jump` function is higher than the other problems. To explore this hypothesis, we will generate some simulated runtimes of the EA on several test functions, including `Jump`. Then, we will perform ANOVA analysis on the deviation of runtimes.
+The pattern I will be simulating is that, compared to the `control` group, both other groups will have a higher mean percentage of ash at the end of the study period. 
+The mean in the `quarantine` and `awareness` groups will have similar means, but variance will be much higher in the latter group due to occassional unlucky events in which EAB is introduced to a very vulnerable area and EAB growth explodes there.
+Since I will be doing a simple ANOVA test, this pattern will not actually be tested for unless I did a pairwise t-test or something like that. Instead the ANOVA will serve the usual "should I test for a specific pattern" initial test. The formal statement of the hyptotheses for the ANOVA test are as follows:
+
+$H_0$: The average number of ash trees which are uninfected or have been successfully treated against the EAB is the same in all treatment groups.
+
+$H_a$: The average number of healthy ash treas is different in at least one of the treatment groups.
 
 ## 2
 
-We assume the runtimes for each function are normally distributed. Based on some experiments, we observed for problem size of $n = 200$ it is not unusual to have a variation of about 1,000,000 function evaluations between runtimes of the `Jump` function.
+Now we simulated the data from a normal distribution. The observation values correspond to the number of healthy trees at the end of the study period.
 
 ```{r}
-problem_size = 200
-sample_size = 100
-groups = c("OneMax", "LeadingOnes","Jump")
-means = c(log(problem_size) * problem_size, problem_size^2, problem_size^3)
-sds = c(2500, 4000, 500000)
-ids = 1:(sample_size * length(groups))
+n = 1000
+mean_control = 400
+mean_quar = 620
+mean_aware = 600
+std_control = 200
+std_quar = 50
+std_aware = 150
 ```
 
 ## 3
 
-Now we get some simulated data and put it in a data frame. 
+The above variables will be all we need to get our randomly generated data. So now, we generate 3 different normal distributions.
 
 ```{r}
-rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
-           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
-           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
-cases = rep(groups, each=sample_size)
-rtdata = data.frame(ids, cases, rt_diff)
+dat_control = rnorm(n, mean_control, std_control)
+dat_quar = rnorm(n , mean_quar, std_quar)
+dat_aware = rnorm(n, mean_aware, std_aware)
+dat = data.frame(id=1:n, control=dat_control,
+                 quar=dat_quar,
+                 aware=dat_aware)
+head(dat)
+dat_long = gather(dat, group, num_ash, -id)
 ```
 
 ## 4
 
-First print F value and probabilities...
+Time for our hypothesis test. In order to check conditions for anova, we create a boxplot:
 
 ```{r}
-anova_model = aov(rt_diff ~ cases)
-z = unlist(summary(anova_model))
-anova_summary = list(fval=z[7], probf=z[9])
-anova_summary
+ggplot(dat_long, aes(x=group, y=num_ash, fill=group)) + geom_boxplot()
 ```
 
-And now we do a boxplot of the normalized runtimes for each function.
+As expected by the variances I chose, the constant variance condition looks a little suspicious, but we continue with the analysis anyway.
+
 
 ```{r}
-anova_plot = ggplot(data=rtdata, aes(x=cases, y=rt_diff, fill=cases)) +
-  geom_boxplot()
-anova_plot
+anova_model = aov(num_ash ~ group, data=dat_long)
+summary(anova_model)
 ```
+
+We see that there is significant evidence $(P < 0.001)$ supporting the rejection of $H_0$.
 
 ## 5
 
-The results seem pretty consistent because the variance on the `Jump` function is clearly much much higher based on our assumptions.
+An example of running the test again:
+
+```{r}
+dat_control = rnorm(n, mean_control, std_control)
+dat_quar = rnorm(n , mean_quar, std_quar)
+dat_aware = rnorm(n, mean_aware, std_aware)
+dat = data.frame(id=1:n, control=dat_control,
+                 quar=dat_quar,
+                 aware=dat_aware)
+dat_long = gather(dat, group, num_ash, -id)
+anova_model = aov(num_ash ~ group, data=dat_long)
+summary(anova_model)
+```
 
 ## 6
 
-Holding everything else constant, we started no longer obtaining a statistically significant result if we make the following change to the means (note that changing the standard deviation of the runtimes will cause a change in the means of the deviation, which is the mean we are concerned with):
-
 ```{r}
-sds = c(1000, 1100, 1300)
-rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
-           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
-           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
-cases = rep(groups, each=sample_size)
-rtdata = data.frame(ids, cases, rt_diff)
-anova_model = aov(rt_diff ~ cases)
-z = unlist(summary(anova_model))
-anova_summary = list(fval=z[7], probf=z[9])
-anova_summary
+mean_quar = 405
+mean_aware = 402
+dat_control = rnorm(n, mean_control, std_control)
+dat_quar = rnorm(n , mean_quar, std_quar)
+dat_aware = rnorm(n, mean_aware, std_aware)
+dat = data.frame(id=1:n, control=dat_control,
+                 quar=dat_quar,
+                 aware=dat_aware)
+dat_long = gather(dat, group, num_ash, -id)
+anova_model = aov(num_ash ~ group, data=dat_long)
+summary(anova_model)
 ```
 
-based on this, we see that the effect size must be much, much smaller than our hypothesized values to start obtaining non-statistically significant results.
+After some toying, I found I had to adjust the means pretty close to the control group to no longer get a statistically significant result.
 
 ## 7
 
-The effect size was originally so high, it seems difficult to choose a sample size which is small enough to get $p \gg .05$. For example, even $n = 20$ gives the following results:
+First I set the effect sizes back to their original values
 
 ```{r}
-sds = c(2500, 4000, 500000)
-sample_size = 20
-rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]),
-           abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]),
-           abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3]))
-cases = rep(groups, each=sample_size)
-rtdata = data.frame(ids, cases, rt_diff)
-anova_model = aov(rt_diff ~ cases)
-z = unlist(summary(anova_model))
-anova_summary = list(fval=z[7], probf=z[9])
-anova_summary
+mean_quar = 620
+mean_aware = 600
 ```
+
+This time, I mess around with smaller and smaller values for $n$, the sample size.
+
+```{r}
+n= 5
+dat_control = rnorm(n, mean_control, std_control)
+dat_quar = rnorm(n , mean_quar, std_quar)
+dat_aware = rnorm(n, mean_aware, std_aware)
+dat = data.frame(id=1:n, control=dat_control,
+                 quar=dat_quar,
+                 aware=dat_aware)
+dat_long = gather(dat, group, num_ash, -id)
+anova_model = aov(num_ash ~ group, data=dat_long)
+summary(anova_model)
+```
+
+Given the large difference in the original means, it took a very small sample size to start getting results that were not statistically significant at a value of $\alpha = 0.05$.
+
+
+
+
+
+<!-- ## 1 -->
+
+<!-- To support asymptotic results on the runtimes of Evolutionary Algorithms, it is often helpful to run experiments to get a more practical picture of the non-dominating factors in the algorithm's runtime, and to support the theoretical results. We have collected the runtimes of a self-adaptive EA on several test problems. -->
+
+<!-- We will be exploring the amount of deviation in these problems. For example, one hypothesis is that the variance in the runtimes for the `Jump` function is higher than the other problems. To explore this hypothesis, we will generate some simulated runtimes of the EA on several test functions, including `Jump`. Then, we will perform ANOVA analysis on the deviation of runtimes. -->
+
+<!-- ## 2 -->
+
+<!-- We assume the runtimes for each function are normally distributed. Based on some experiments, we observed for problem size of $n = 200$ it is not unusual to have a variation of about 1,000,000 function evaluations between runtimes of the `Jump` function. -->
+
+<!-- ```{r} -->
+<!-- problem_size = 200 -->
+<!-- sample_size = 100 -->
+<!-- groups = c("OneMax", "LeadingOnes","Jump") -->
+<!-- means = c(log(problem_size) * problem_size, problem_size^2, problem_size^3) -->
+<!-- sds = c(2500, 4000, 500000) -->
+<!-- ids = 1:(sample_size * length(groups)) -->
+<!-- ``` -->
+
+<!-- ## 3 -->
+
+<!-- Now we get some simulated data and put it in a data frame.  -->
+
+<!-- ```{r} -->
+<!-- rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3])) -->
+<!-- cases = rep(groups, each=sample_size) -->
+<!-- rtdata = data.frame(ids, cases, rt_diff) -->
+<!-- ``` -->
+
+<!-- ## 4 -->
+
+<!-- First print F value and probabilities... -->
+
+<!-- ```{r} -->
+<!-- anova_model = aov(rt_diff ~ cases) -->
+<!-- z = unlist(summary(anova_model)) -->
+<!-- anova_summary = list(fval=z[7], probf=z[9]) -->
+<!-- anova_summary -->
+<!-- ``` -->
+
+<!-- And now we do a boxplot of the normalized runtimes for each function. -->
+
+<!-- ```{r} -->
+<!-- anova_plot = ggplot(data=rtdata, aes(x=cases, y=rt_diff, fill=cases)) + -->
+<!--   geom_boxplot() -->
+<!-- anova_plot -->
+<!-- ``` -->
+
+<!-- ## 5 -->
+
+<!-- The results seem pretty consistent because the variance on the `Jump` function is clearly much much higher based on our assumptions. -->
+
+<!-- ## 6 -->
+
+<!-- Holding everything else constant, we started no longer obtaining a statistically significant result if we make the following change to the means (note that changing the standard deviation of the runtimes will cause a change in the means of the deviation, which is the mean we are concerned with): -->
+
+<!-- ```{r} -->
+<!-- sds = c(1000, 1100, 1300) -->
+<!-- rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3])) -->
+<!-- cases = rep(groups, each=sample_size) -->
+<!-- rtdata = data.frame(ids, cases, rt_diff) -->
+<!-- anova_model = aov(rt_diff ~ cases) -->
+<!-- z = unlist(summary(anova_model)) -->
+<!-- anova_summary = list(fval=z[7], probf=z[9]) -->
+<!-- anova_summary -->
+<!-- ``` -->
+
+<!-- based on this, we see that the effect size must be much, much smaller than our hypothesized values to start obtaining non-statistically significant results. -->
+
+<!-- ## 7 -->
+
+<!-- The effect size was originally so high, it seems difficult to choose a sample size which is small enough to get $p \gg .05$. For example, even $n = 20$ gives the following results: -->
+
+<!-- ```{r} -->
+<!-- sds = c(2500, 4000, 500000) -->
+<!-- sample_size = 20 -->
+<!-- rt_diff = c(abs(rnorm(n=sample_size, mean=means[1], sd=sds[1]) - means[1]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[2], sd=sds[2]) - means[2]), -->
+<!--            abs(rnorm(n=sample_size, mean=means[3], sd=sds[3]) - means[3])) -->
+<!-- cases = rep(groups, each=sample_size) -->
+<!-- rtdata = data.frame(ids, cases, rt_diff) -->
+<!-- anova_model = aov(rt_diff ~ cases) -->
+<!-- z = unlist(summary(anova_model)) -->
+<!-- anova_summary = list(fval=z[7], probf=z[9]) -->
+<!-- anova_summary -->
+<!-- ``` -->
 
 
 
