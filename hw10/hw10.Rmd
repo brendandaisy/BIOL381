@@ -9,11 +9,12 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
 ```
 
 ## 1
 
-For simplicity, I'm just going to use the fake data which was produced in Homework 7/8 for this project. Namely, I generate several response variables from a normal distribution with different means and variances. Since this data has three response variables, I will not be doing a regression test like we did in class, but instead a randomization version of a difference in means test.
+For simplicity, I'm just going to use the fake data which was produced in Homework 7/8 for this project. Namely, I generate several response variables from a normal distribution with different means and variances. Since this data has three response variables, I will not be doing a regression test like we did in class, but instead a randomization version of a difference in means test based on a control and response group. My control group will be the number of healthy ash trees after no intervention, and my response group will be the number of healthy ash trees after a quarantine. The p-value then becomes the probability that the observed difference in means between the control and response group came from the distribution of mean differences in the shuffled data.
 
 ```{r}
 ##################################################
@@ -24,12 +25,11 @@ For simplicity, I'm just going to use the fake data which was produced in Homewo
 # output: data frame (long format)
 #------------------------------------------------- 
 eab_sim = function(n=1000,
-                   groups = c('control', 'quar', 'aware'),
-                   means = c(400, 650, 600),
-                   std_devs = c(200, 50, 150)) {
+                   groups = c('control', 'quar'),
+                   means = c(400, 430),
+                   std_devs = c(200, 150)) {
   dat = data.frame(rnorm(n, means[1], std_devs[1]),
-                   rnorm(n, means[2], std_devs[2]),
-                   rnorm(n, means[3], std_devs[3]))
+                   rnorm(n, means[2], std_devs[2]))
   colnames(dat) = groups
   return(dat)
 }
@@ -44,23 +44,23 @@ eab_sim = function(n=1000,
 # output: 3 column data frame of observed data
 #------------------------------------------------- 
 readData <- function() {
-  return(eab_sim())
+  return(eab_sim(groups=c('control', 'quar'), means=c(400, 410),
+                 std_devs=c(200, 150)))
 }
 
 ##################################################
 # function: shuffleData
-# randomize data by randomly swapping 1/3 of the data between groups
-# input: 3-column data frame
-# output: 3-column data frame
+# randomize data by randomly swapping 1/2 of the data between groups
+# input: 2-column data frame
+# output: shuffled 2-column data frame
 #------------------------------------------------- 
 shuffleData <- function(data) {
+  data = df
   temp = data
-  s1 = sample(1:(length(data[,1])/3), replace=F)
-  s2 = sample(1:(length(data[,1])/3), replace=F)
-  s3 = sample(1:(length(data[,1])/3), replace=F)
-  data[,1] = c(data[-s1,1], temp[s1,2])
-  data[,2] = c(data[-s2,2], temp[s2,3])
-  data[,3] = c(data[-s3,3], temp[s3,1])
+  s = sample(1:(length(data[,1])), length(data[,1])/2, replace=F)
+  data[,1] = c(data[-s,1], temp[s,2])
+  data[,2] = c(data[-s, 2], temp[s, 1])
+  # plot(data[,1])
   return(data)
 }
 
@@ -70,12 +70,24 @@ shuffleData <- function(data) {
 # input: list of observed metric, and vector of simulated metrics
 # output: lower, upper tail probability values
 #------------------------------------------------- 
-getPVal <- function(z=NULL) {
-                    if(is.null(z)){
-                      z <- list(xObs=runif(1),xSim=runif(1000))}
-pLower <- mean(z[[2]]<=z[[1]])
-pUpper <- mean(z[[2]]>=z[[1]])
-return(c(pL=pLower,pU=pUpper))
+getPVal <- function(null_dist, obs_mean, n=1000){
+  pLower <- length(null_dist[null_dist > obs_mean]) / n
+  return(pLower)
+}
+
+##################################################
+# function: getMetric
+# calculate metric for randomization test
+# input: 2-column data frame
+# output: null distribution
+#------------------------------------------------- 
+getMetric <- function(data, n=1000) {
+  ret = rep(-1, 1000)
+  for (i in 1:n) {
+    shuf = shuffleData(data)
+    ret[i] = mean(shuf[,1]) - mean(shuf[,2])
+  }
+  return(ret)
 }
 
 ##################################################
@@ -84,20 +96,17 @@ return(c(pL=pLower,pU=pUpper))
 # input: list of observed metric and vector of simulated metrics
 # output: saved ggplot graph
 #------------------------------------------------- 
-plotRanTest <- function(z=NULL) {
-                if(is.null(z)){
-                  z <- list(rnorm(1),rnorm(1000)) }
-dF <- data.frame(ID=seq_along(z[[2]]),simX=z[[2]])
-p1 <- ggplot(data=dF,mapping=aes(x=simX))
-p1 + geom_histogram(mapping=aes(fill=I("goldenrod"),color=I("black"))) +
-geom_vline(aes(xintercept=z[[1]],col="blue")) 
-
+plotRanTest <- function(null_dist, obs_mean) {
+  ggplot(data.frame(null_dist), aes(null_dist)) + geom_histogram(bins=30) +
+    geom_vline(xintercept=obs_mean, col='red', linetype='dashed')
 }
 
+## program body
 set.seed(1234)
 df = readData()
-df_rand = shuffleData(df)
-# what is the probability that the observed data came from the shuffled data?
+null_dist = getMetric(df)
+getPVal(null_dist, mean(df$quar) - mean(df$control))
+plotRanTest(null_dist, mean(df$quar) - mean(df$control))
 ```
 
 ## 2
